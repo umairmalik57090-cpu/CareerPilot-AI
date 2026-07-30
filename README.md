@@ -13,11 +13,29 @@ Whether you're a student, fresh graduate, or experienced professional, CareerPil
 
 ---
 
-# 🎥 Demo
+Absolutely! Here's your updated **README** section with your **LinkedIn demo video** already added.
 
-📹 **Watch the Demo Video**
+---
 
-> *(Add your LinkedIn or YouTube demo link here)*
+## 🎥 Demo Video
+
+📹 **Watch CareerPilot AI in Action**
+
+See a complete walkthrough of the application, including:
+
+* 📄 AI CV Analysis
+* ✅ ATS Compatibility Checker
+* 🎤 AI Interview Coach
+* 📊 Skill Gap Analysis
+* 🛣 Personalized Career Roadmap
+* 📜 History Management
+* 🎨 Modern Streamlit Dashboard
+
+🔗 **Live Demo Video:**
+
+[CareerPilot AI Demo Video on LinkedIn](https://www.linkedin.com/posts/comweb-muhammad-umair_python-artificialintelligence-ai-ugcPost-7488496253106806784-FqDQ/?utm_medium=member_desktop_web&rcm=ACoAAElurzgBV1Drd3ViOL6DNko-zS2s3qnCF0A&utm_source=chatgpt.com)
+
+> 🎬 Watch the full demo to see how CareerPilot AI helps job seekers analyze their CVs, improve ATS compatibility, prepare for interviews, identify skill gaps, and build a personalized career roadmap using AI.
 
 ---
 
@@ -305,9 +323,7 @@ Contributions, issues, and feature requests are welcome!
 
 📧 Email: [umairmalik57090@gmail.com](mailto:umairmalik57090@gmail.com)
 
-💼 LinkedIn: *(Add your LinkedIn Profile)*
-
-🐙 GitHub: *(Add your GitHub Profile)*
+💼 LinkedIn: (www.linkedin.com/in/comweb-muhammad-umair).
 
 ---
 
@@ -316,12 +332,6 @@ Contributions, issues, and feature requests are welcome!
 If you found this project useful:
 
 ⭐ Star this repository
-
-🍴 Fork it
-
-💬 Share your feedback
-
-🚀 Happy Coding!
 
 ---
 
