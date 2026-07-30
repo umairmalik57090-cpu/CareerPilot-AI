@@ -228,6 +228,9 @@ Career Roadmap
 Personalized Career Insights
 ```
 
+---
+---
+
 # 🌟 Future Improvements
 
 * AI Cover Letter Generator
