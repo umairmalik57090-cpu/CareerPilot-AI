@@ -1,5 +1,3 @@
-Since you've **migrated from Gemini to Groq**, your README should reflect that. Replace the AI section and installation instructions with the following.
-
 ---
 
 # 🚀 CareerPilot AI
