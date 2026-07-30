@@ -1,0 +1,23 @@
+# Environment and Secrets
+.env
+
+# Python Virtual Environment & Cache
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# User Uploads and Dynamic Storage
+uploads/*
+!uploads/.gitkeep
+history/*
+!history/.gitkeep
+exports/*
+!exports/.gitkeep
+
+# System & OS Files
+.DS_Store
+Thumbs.db
