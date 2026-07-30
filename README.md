@@ -237,12 +237,15 @@ Include screenshots of:
 * 🏠 Dashboard
 * <img width="955" height="417" alt="image" src="https://github.com/user-attachments/assets/c52f64dd-7972-4a09-9e04-98feb0ead971" />
 * 📄 CV Analysis
+* <img width="958" height="419" alt="image" src="https://github.com/user-attachments/assets/a8ab4a30-7834-44fa-b838-a13d58433981" />
 * ✅ ATS Checker
+* <img width="959" height="414" alt="image" src="https://github.com/user-attachments/assets/e0635251-162e-4453-b443-dd9427f6f360" />
 * 🎤 Interview Coach
+* <img width="955" height="415" alt="image" src="https://github.com/user-attachments/assets/86bc897d-50a2-46ab-b7aa-a39c26b4e085" />
 * 📊 Skill Gap Analysis
+* <img width="956" height="418" alt="image" src="https://github.com/user-attachments/assets/a0495ea5-4495-496e-ac29-e5d8368b96da" />
 * 🛣 Career Roadmap
-* 📜 History
-
+* <img width="959" height="419" alt="image" src="https://github.com/user-attachments/assets/780d9601-f306-4535-bdcf-473fbd58d996" />
 ---
 
 # 🌟 Future Improvements
