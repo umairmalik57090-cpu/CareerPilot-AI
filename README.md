@@ -1,37 +1,46 @@
+---
+
 # 🚀 CareerPilot AI
 
-> **Your AI-Powered Career Assistant for CV Analysis, ATS Optimization, Interview Preparation, and Career Growth.**
+### AI-Powered CV Analysis, Interview Preparation & Career Growth Platform
 
-![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python)
-![Streamlit](https://img.shields.io/badge/Streamlit-App-red?logo=streamlit)
-![AI Powered](https://img.shields.io/badge/AI-Powered-success)
-![License](https://img.shields.io/badge/License-MIT-green)
+> **Build a stronger CV, prepare for interviews, improve ATS compatibility, and accelerate your career with the power of AI.**
 
-CareerPilot AI is an intelligent career development platform that helps job seekers improve their CVs, prepare for interviews, identify missing skills, and build a personalized learning roadmap using AI.
-
-Whether you're a student, fresh graduate, or experienced professional, CareerPilot AI provides actionable insights to help you stand out in today's competitive job market.
+![Python](https://img.shields.io/badge/Python-3.11+-blue?style=for-the-badge\&logo=python)
+![Streamlit](https://img.shields.io/badge/Streamlit-Web_App-red?style=for-the-badge\&logo=streamlit)
+![Groq](https://img.shields.io/badge/Groq-AI-orange?style=for-the-badge)
+![AI](https://img.shields.io/badge/AI-Career_Assistant-success?style=for-the-badge)
+![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
 ---
 
-## 🎥 Demo Video
+# 📖 Overview
 
-📹 **Watch CareerPilot AI in Action**
+**CareerPilot AI** is an intelligent AI-powered career assistant designed to help students, fresh graduates, and professionals improve their CVs and prepare for job opportunities.
 
-See a complete walkthrough of the application, including:
+Using the **Groq API** and modern large language models, the application provides instant, context-aware career guidance including CV analysis, ATS compatibility checking, interview coaching, skill gap analysis, and personalized career roadmaps.
+
+Built with **Python** and **Streamlit**, CareerPilot AI delivers a fast, modern, and interactive user experience.
+
+---
+
+# 🎥 Demo Video
+
+🎬 **Watch the Complete Project Demo**
+
+📹 **LinkedIn Demo:**
+
+[https://www.linkedin.com/posts/comweb-muhammad-umair_python-artificialintelligence-ai-ugcPost-7488496253106806784-FqDQ/](https://www.linkedin.com/posts/comweb-muhammad-umair_python-artificialintelligence-ai-ugcPost-7488496253106806784-FqDQ/)
+
+Watch the demo to see:
 
 * 📄 AI CV Analysis
 * ✅ ATS Compatibility Checker
 * 🎤 AI Interview Coach
 * 📊 Skill Gap Analysis
-* 🛣 Personalized Career Roadmap
+* 🛣 Career Roadmap
 * 📜 History Management
-* 🎨 Modern Streamlit Dashboard
-
-🔗 **Live Demo Video:**
-
-[CareerPilot AI Demo Video on LinkedIn](https://www.linkedin.com/posts/comweb-muhammad-umair_python-artificialintelligence-ai-ugcPost-7488496253106806784-FqDQ/?utm_medium=member_desktop_web&rcm=ACoAAElurzgBV1Drd3ViOL6DNko-zS2s3qnCF0A&utm_source=chatgpt.com)
-
-> 🎬 Watch the full demo to see how CareerPilot AI helps job seekers analyze their CVs, improve ATS compatibility, prepare for interviews, identify skill gaps, and build a personalized career roadmap using AI.
+* 🎨 Modern Dashboard
 
 ---
 
@@ -39,136 +48,100 @@ See a complete walkthrough of the application, including:
 
 ## 📄 AI CV Analysis
 
-* Upload your CV (PDF)
-* Extract text automatically
-* AI-powered CV evaluation
-* Overall CV Score
+* Upload PDF CV
+* AI-powered CV Review
 * Executive Summary
+* CV Score
 * Strengths & Weaknesses
-* Actionable improvement suggestions
+* Improvement Suggestions
 
 ---
 
-## ✅ ATS Checker
+## ✅ ATS Compatibility Checker
 
-Improve your chances of getting shortlisted.
-
-Features include:
-
-* ATS Compatibility Score
-* Keyword Analysis
-* Missing Skills Detection
+* ATS Score
+* Missing Keywords
+* Keyword Match Analysis
 * Formatting Review
-* Optimization Suggestions
+* ATS Optimization Tips
 
 ---
 
 ## 🎤 AI Interview Coach
 
-Practice interviews with AI.
-
-Features:
-
 * Select Job Role
-* Generate Dynamic Interview Questions
-* Answer Evaluation
+* Generate AI Interview Questions
+* Evaluate Answers
+* Technical Feedback
+* Communication Analysis
 * Confidence Score
-* Technical Accuracy Score
-* Communication Score
-* AI Feedback
-* Personalized Improvement Tips
+* Personalized Suggestions
 
 ---
 
 ## 📊 Skill Gap Analysis
 
-Compare your current skills with industry requirements.
-
-* Missing Skills
-* Recommended Technologies
-* Learning Priorities
-* Career Recommendations
+* Compare Current Skills
+* Identify Missing Skills
+* Learning Recommendations
+* Career Suggestions
 
 ---
 
 ## 🛣 Career Roadmap
 
-Receive a personalized learning path.
-
-Includes:
-
-* Beginner to Advanced Roadmap
-* Recommended Skills
-* Suggested Learning Sequence
-* Career Growth Plan
+* Personalized Learning Plan
+* Recommended Technologies
+* Certifications
+* Project Ideas
+* Career Growth Strategy
 
 ---
 
 ## 📜 History
 
-Never lose previous analyses.
-
-* View Past Reports
+* Save Previous Analyses
+* Review Past Reports
 * Track Progress
-* Revisit Previous Results
 
 ---
 
-## ⚙️ Settings
+## 🎨 Modern Dashboard
 
-Customize your experience.
-
-* AI Provider Settings
-* Theme Preferences
-* User Configuration
+* Premium UI
+* Responsive Design
+* Interactive Cards
+* Analytics Dashboard
+* Easy Navigation
 
 ---
 
-# 🖥 Dashboard
+# ⚡ Powered by Groq AI
 
-A modern dashboard gives quick access to every feature from a single place.
+CareerPilot AI uses the **Groq API** for ultra-fast AI inference.
 
-✔ Resume Upload
+### Benefits
 
-✔ CV Analysis
-
-✔ ATS Checker
-
-✔ Interview Coach
-
-✔ Skill Gap
-
-✔ Career Roadmap
-
-✔ History
+* ⚡ Extremely Fast Responses
+* 🧠 High-Quality AI Outputs
+* 💰 Free Developer Tier
+* 🔒 Secure API Integration
+* 🚀 Optimized Performance
 
 ---
 
 # 🛠 Tech Stack
 
-### Frontend
-
-* Streamlit
-* HTML
-* CSS
-
-### Backend
-
-* Python
-
-### AI
-
-* Groq API *(Support)*
-
-### Libraries
-
-* Streamlit
-* Pandas
-* PyPDF2
-* python-dotenv
-* Requests
-* JSON
-* Datetime
+| Technology    | Purpose               |
+| ------------- | --------------------- |
+| Python        | Backend               |
+| Streamlit     | Web Application       |
+| Groq API      | AI Processing         |
+| HTML/CSS      | Custom UI             |
+| Plotly        | Data Visualization    |
+| PyPDF2        | PDF Parsing           |
+| Python-dotenv | Environment Variables |
+| JSON          | Data Storage          |
 
 ---
 
@@ -178,80 +151,54 @@ A modern dashboard gives quick access to every feature from a single place.
 CareerPilot-AI/
 │
 ├── app.py
+├── groq_client.py
 ├── ai_engine.py
-├── analytics.py
 ├── ats_checker.py
 ├── interview.py
-├── gemini_client.py
+├── analytics.py
 ├── config.py
 ├── requirements.txt
 ├── README.md
+├── AI_USAGE.md
+├── .env.example
 │
+├── assets/
 ├── uploads/
 ├── exports/
 ├── history/
-├── assets/
-└── tests/
+└── screenshots/
 ```
 
 ---
 
 # 🚀 Installation
 
-### 1. Clone Repository
+### Clone Repository
 
 ```bash
-git clone https://github.com/yourusername/CareerPilot-AI.git
+git clone https://github.com/umairmalik57090-cpu/CareerPilot-AI.git
+```
 
+### Navigate to Project
+
+```bash
 cd CareerPilot-AI
 ```
 
-### 2. Create Virtual Environment
-
-```bash
-python -m venv .venv
-```
-
-### Windows
-
-```bash
-.venv\Scripts\activate
-```
-
-### Linux / Mac
-
-```bash
-source .venv/bin/activate
-```
-
----
-
-### 3. Install Dependencies
+### Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
----
-
-### 4. Configure Environment Variables
-
-Create a `.env` file in the project root.
-
-```env
-GEMINI_API_KEY=YOUR_API_KEY
-MODEL_NAME=gemini-2.5-flash
-```
-
-Or if using Groq:
+### Create `.env`
 
 ```env
 GROQ_API_KEY=YOUR_GROQ_API_KEY
+MODEL_NAME=llama-3.3-70b-versatile
 ```
 
----
-
-### 5. Run the Application
+### Run Application
 
 ```bash
 streamlit run app.py
@@ -261,73 +208,88 @@ streamlit run app.py
 
 # 💡 How It Works
 
-1. Upload your CV.
-2. The application extracts text from the PDF.
-3. AI analyzes your CV.
-4. Receive:
-
-   * CV Score
-   * ATS Score
-   * Interview Questions
-   * Skill Gap Analysis
-   * Career Roadmap
-5. Improve your CV based on AI recommendations.
+```text
+Upload CV
+     │
+     ▼
+Extract PDF Content
+     │
+     ▼
+Groq AI Analysis
+     │
+     ▼
+CV Analysis
+ATS Score
+Interview Questions
+Skill Gap Analysis
+Career Roadmap
+     │
+     ▼
+Personalized Career Insights
+```
 
 ---
 
 # 📸 Screenshots
 
-Add screenshots of:
+Include screenshots of:
 
-* Dashboard
-* CV Analysis
-* ATS Checker
-* Interview Coach
-* Skill Gap
-* Career Roadmap
+* 🏠 Dashboard
+* <img width="955" height="417" alt="image" src="https://github.com/user-attachments/assets/c52f64dd-7972-4a09-9e04-98feb0ead971" />
+* 📄 CV Analysis
+* ✅ ATS Checker
+* 🎤 Interview Coach
+* 📊 Skill Gap Analysis
+* 🛣 Career Roadmap
+* 📜 History
 
 ---
 
 # 🌟 Future Improvements
 
-* User Authentication
-* Multiple AI Providers
-* Export Reports as PDF
+* AI Cover Letter Generator
+* LinkedIn Profile Review
 * Voice Interview Practice
 * Job Recommendation Engine
-* LinkedIn Profile Analysis
-* AI Cover Letter Generator
 * Multi-language Support
+* Export Reports as PDF
+* User Authentication
+* Cloud Database Integration
 
 ---
 
-# 🤝 Contributing
-
-Contributions, issues, and feature requests are welcome!
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Open a Pull Request
-
----
-
-# 👨‍💻 Author
+# 👨‍💻 Developer
 
 **Muhammad Umair**
 
-📧 Email: [umairmalik57090@gmail.com](mailto:umairmalik57090@gmail.com)
+🎓 BS Computer Science Student
 
-💼 LinkedIn: (www.linkedin.com/in/comweb-muhammad-umair).
+🤖 AI & Machine Learning Enthusiast
+
+📈 Meta Ads & Google Ads Specialist
+
+💻 Passionate about building practical AI-powered applications with Python.
 
 ---
 
 # ⭐ Support
 
-If you found this project useful:
+If you enjoyed this project:
 
-⭐ Star this repository
+⭐ Star the repository
+
+🍴 Fork the project
+
+💬 Share your feedback
+
+🚀 Happy Coding!
 
 ---
 
-## 💙 "Turn your CV into a confident career story with CareerPilot AI."
+# 📄 License
+
+This project is licensed under the **MIT License**.
+
+---
+
+## 💡 *"Empowering Careers with AI — Analyze Smarter, Prepare Better, Succeed Faster."*
