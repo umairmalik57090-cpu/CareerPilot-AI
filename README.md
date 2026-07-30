@@ -158,8 +158,7 @@ A modern dashboard gives quick access to every feature from a single place.
 
 ### AI
 
-* Gemini API *(Supported)*
-* Groq API *(Optional Support)*
+* Groq API *(Support)*
 
 ### Libraries
 
