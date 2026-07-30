@@ -13,10 +13,6 @@ Whether you're a student, fresh graduate, or experienced professional, CareerPil
 
 ---
 
-Absolutely! Here's your updated **README** section with your **LinkedIn demo video** already added.
-
----
-
 ## 🎥 Demo Video
 
 📹 **Watch CareerPilot AI in Action**
