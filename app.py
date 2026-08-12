@@ -7,13 +7,16 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(BASE_DIR))
 
+import pandas as pd
 import streamlit as st
 
 from ai_engine import analyze_resume
+from ai_service import safe_ai_call
 from analytics import build_dashboard_charts
 from ats_checker import calculate_ats_score
 from config import APP_CONFIG, SIDEBAR_ITEMS, HISTORY_DIR
 from interview import evaluate_answer, generate_interview_questions
+from job_matcher import calculate_job_match
 from roadmap import (
     generate_career_tips,
     generate_linkedin_suggestions,
@@ -22,6 +25,7 @@ from roadmap import (
     rewrite_resume_section,
 )
 from resume_parser import (
+    build_analysis_history_entry,
     build_history_entry,
     extract_text_from_file,
     load_history_entries,
@@ -45,6 +49,45 @@ def get_groq_client_module():
     return groq_client
 
 
+def save_current_analysis_history(summary: str = "Analysis recorded", job_description: str = "") -> None:
+    if not st.session_state.get("uploaded_resume"):
+        return
+
+    parsed_resume = st.session_state["uploaded_resume"]["parsed"]
+    analysis_result = st.session_state.get("analysis_result") or {}
+    ats_result = st.session_state.get("ats_result") or {}
+    job_match_result = st.session_state.get("job_match_result") or {}
+
+    resume_score = int(analysis_result.get("resume_score", analysis_result.get("overall_score", 0)) or 0)
+    ats_score = int(ats_result.get("overall_score", 0) or 0)
+    # job_match_result['score'] may be 'N/A' or None when insufficient data; coerce safely
+    _raw_job_score = job_match_result.get("score", 0)
+    try:
+        job_match_score = int(_raw_job_score) if _raw_job_score is not None and _raw_job_score != "N/A" else 0
+    except Exception:
+        job_match_score = 0
+    skill_coverage = int(job_match_result.get("skill_coverage", 0) or 0)
+    interview_readiness = 100 if st.session_state.get("interview_questions") else 0
+
+    history_record = build_analysis_history_entry(
+        parsed_resume=parsed_resume,
+        resume_score=resume_score,
+        ats_score=ats_score,
+        job_match_score=job_match_score,
+        skill_coverage=skill_coverage,
+        interview_readiness=interview_readiness,
+        target_role=st.session_state.get("target_role", "General"),
+        summary=summary,
+        job_description=job_description,
+        matching_skills=list(job_match_result.get("matching_skills", [])),
+        missing_skills=list(job_match_result.get("missing_skills", [])),
+        preferred_skills=list(job_match_result.get("preferred_skills", [])),
+        partial_matches=list(job_match_result.get("partial_matches", [])),
+    )
+    save_history_entry(history_record)
+    st.session_state["history_entries"] = load_history_entries()
+
+
 def execute_single_call_resume_analysis(target_role: str = "General") -> None:
     if not st.session_state.get("uploaded_resume"):
         st.warning("Please upload a resume first.")
@@ -54,6 +97,7 @@ def execute_single_call_resume_analysis(target_role: str = "General") -> None:
     resume_data = st.session_state["uploaded_resume"]
     text = resume_data.get("text", "")
     parsed = resume_data.get("parsed", {})
+    st.session_state["target_role"] = target_role
 
     try:
         from ai_engine import analyze_resume_comprehensive
@@ -79,6 +123,8 @@ def execute_single_call_resume_analysis(target_role: str = "General") -> None:
             st.session_state["career_tips"] = generate_career_tips()
             st.session_state["comprehensive_analysis"] = result
             st.session_state["analysis_done"] = True
+
+            save_current_analysis_history(summary="Resume analysis completed.")
 
             if result.get("from_cache"):
                 st.info("⚡ Loaded complete analysis from instant cache (0 API calls).")
@@ -209,8 +255,32 @@ def render_sidebar():
             )
 
         st.markdown("<div class='sidebar-title'>Navigation</div>", unsafe_allow_html=True)
-        page = st.radio("", list(SIDEBAR_ITEMS.keys()), index=0, label_visibility="collapsed")
+        sidebar_labels = list(SIDEBAR_ITEMS.keys())
+        current_page = st.session_state.get("active_page", "Dashboard")
+        last_active_page = st.session_state.get("_last_active_page", current_page)
+        selected_index = 0
+        if current_page in SIDEBAR_ITEMS.values():
+            for index, label in enumerate(sidebar_labels):
+                if SIDEBAR_ITEMS[label] == current_page:
+                    selected_index = index
+                    break
+
+        sidebar_label_for_current_page = sidebar_labels[selected_index]
+        if (
+            "sidebar_radio" not in st.session_state
+            or current_page != last_active_page
+        ):
+            st.session_state["sidebar_radio"] = sidebar_label_for_current_page
+
+        selected_label = st.radio(
+            "",
+            sidebar_labels,
+            key="sidebar_radio",
+            label_visibility="collapsed",
+        )
+        page = SIDEBAR_ITEMS.get(selected_label, "Dashboard")
         st.session_state["active_page"] = page
+        st.session_state["_last_active_page"] = page
 
         st.markdown("---")
         st.markdown(
@@ -434,6 +504,8 @@ def render_home_page():
         if submitted:
             ats_result = calculate_ats_score(st.session_state["uploaded_resume"]["parsed"], job_description)
             st.session_state["ats_result"] = ats_result
+            # Persist the last-used job description so skill coverage can be calculated consistently
+            st.session_state["job_description"] = job_description
 
         if st.session_state.get("ats_result"):
             ats_result = st.session_state["ats_result"]
@@ -553,7 +625,7 @@ def render_interview_page():
         if index < len(st.session_state["interview_questions"]) - 1:
             if st.button("Next Question"):
                 st.session_state["interview_index"] = index + 1
-                st.experimental_rerun()
+                st.rerun()
 
 
 def render_career_page():
@@ -582,6 +654,13 @@ def render_career_page():
             st.session_state["roadmap"] = generate_roadmap(role, text, comp_data)
             st.session_state["linkedin"] = generate_linkedin_suggestions(text, comp_data)
             st.session_state["career_tips"] = generate_career_tips()
+            # Update canonical skill coverage if a job description is present in session
+            try:
+                from utils import calculate_skill_coverage_from_session
+
+                st.session_state["skill_coverage"] = calculate_skill_coverage_from_session()
+            except Exception:
+                st.session_state["skill_coverage"] = None
             st.success("Career guidance is ready.")
 
     if st.session_state.get("skill_gap"):
@@ -834,6 +913,7 @@ def render_ats_page():
     job_description = st.text_area("Paste a job description to compare your resume against", height=180)
     if st.button("Evaluate ATS Match"):
         st.session_state["ats_result"] = calculate_ats_score(parsed_resume, job_description)
+        save_current_analysis_history(summary="ATS analysis completed.", job_description=job_description)
 
     if st.session_state.get("ats_result"):
         ats_result = st.session_state["ats_result"]
@@ -862,6 +942,301 @@ def render_ats_page():
             st.write(f"- {item}")
         if ats_result.get("keywords"):
             st.write("Matched keywords: " + ", ".join(ats_result["keywords"]))
+
+
+def render_job_matcher_page():
+    st.markdown(
+        """
+        <div class='dashboard-card'>
+            <h3>Job Matcher</h3>
+            <p>See how well your resume matches a job description and where the gaps are.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    if not st.session_state.get("uploaded_resume"):
+        st.warning("Upload a resume first to use the Job Matcher.")
+        uploaded_file = st.file_uploader("Upload resume", type=["pdf", "docx", "txt"])
+        if uploaded_file is not None:
+            try:
+                saved_path, safe_name = save_uploaded_resume(uploaded_file)
+                extracted_text = extract_text_from_file(saved_path)
+                parsed_resume = parse_resume(extracted_text)
+                st.session_state["uploaded_resume"] = {
+                    "name": uploaded_file.name,
+                    "saved_path": saved_path,
+                    "parsed": parsed_resume,
+                    "text": extracted_text,
+                }
+                history_entry = build_history_entry(uploaded_file, parsed_resume, saved_path)
+                save_history_entry(history_entry)
+                st.session_state["history_entries"] = load_history_entries()
+                st.success(f"Resume parsed successfully: {uploaded_file.name}")
+            except Exception as exc:
+                st.error(f"Unable to parse the selected file. {exc}")
+        return
+
+    parsed_resume = st.session_state["uploaded_resume"]["parsed"]
+    role = st.selectbox(
+        "Target role",
+        ["Python Developer", "AI Engineer", "Data Analyst", "Web Developer", "Digital Marketing", "Prompt Engineer"],
+        key="job_match_role",
+    )
+    job_description = st.text_area("Paste a job description to compare against", height=180, key="job_match_description")
+    if st.button("Evaluate Job Match", key="btn_job_match"):
+        if not job_description.strip():
+            st.warning("Please paste a job description before evaluating.")
+        else:
+            result = calculate_job_match(parsed_resume, job_description, target_role=role)
+            st.session_state["job_match_result"] = result
+            # Persist job description and canonical skill coverage for other pages
+            st.session_state["job_description"] = job_description
+            try:
+                st.session_state["skill_coverage"] = int(result.get("skill_coverage") if result.get("skill_coverage") is not None else None)
+            except Exception:
+                st.session_state["skill_coverage"] = None
+            save_current_analysis_history(summary="Job match evaluation completed.", job_description=job_description)
+
+    job_description_text = st.session_state.get("job_description", "") or job_description
+    if not job_description_text.strip() and not st.session_state.get("job_match_result"):
+        st.info("Add a job description to compare your resume with the target role.")
+
+    if st.session_state.get("job_match_result"):
+        result = st.session_state["job_match_result"]
+        st.markdown("<div class='section-title'>Job Match Score</div>", unsafe_allow_html=True)
+        top_score = result.get('score')
+        if isinstance(top_score, int):
+            st.metric("Score", f"{top_score}/100")
+        else:
+            st.metric("Score", "N/A")
+
+        # Score breakdown card
+        breakdown = result.get("score_breakdown", {})
+        st.markdown("<div class='section-title'>Score Breakdown</div>", unsafe_allow_html=True)
+        bcols = st.columns([1, 1, 1, 0.8])
+        with bcols[0]:
+            val = breakdown.get("required_match")
+            st.write("**Required Skills Match**")
+            st.write(f"{val if val is not None else 'N/A'}%")
+        with bcols[1]:
+            val = breakdown.get("preferred_match")
+            st.write("**Preferred Skills Match**")
+            st.write(f"{val if val is not None else 'N/A'}%")
+        with bcols[2]:
+            val = breakdown.get("experience_alignment")
+            st.write("**Experience Alignment**")
+            st.write(f"{val if val is not None else 'N/A'}%")
+        with bcols[3]:
+            st.write("**Overall**")
+            overall_val = breakdown.get('overall')
+            if isinstance(overall_val, int):
+                st.write(f"{overall_val}/100")
+            else:
+                st.write("N/A")
+
+        # Main sections: Matching / Missing / Preferred
+        st.markdown("<div class='section-title'>Skills Overview</div>", unsafe_allow_html=True)
+        cols = st.columns(3)
+        with cols[0]:
+            st.write("**Matching Skills**")
+            for item in result.get("matching_skills", []):
+                st.write(f"- {item}")
+        with cols[1]:
+            st.write("**Missing Skills (prioritized)**")
+            ms = result.get("missing_skills_detailed") or []
+            if ms:
+                for item in ms:
+                    st.markdown(f"- **{item['skill']}** — Priority: {item['priority']}\n  - {item['reason']}")
+            else:
+                st.write("No missing required skills detected.")
+        with cols[2]:
+            st.write("**Preferred Skills**")
+            if result.get("preferred_skills"):
+                for item in result.get("preferred_skills", []):
+                    st.write(f"- {item}")
+            else:
+                st.write("None")
+
+        # Partial matches
+        if result.get("partial_matches"):
+            st.markdown("<div class='section-title'>Partial Matches</div>", unsafe_allow_html=True)
+            for item in result.get("partial_matches", []):
+                st.write(f"- {item}")
+
+        # Experience Gap human readable
+        st.markdown("<div class='section-title'>Experience Gap</div>", unsafe_allow_html=True)
+        exp = result.get("experience_gap")
+        if isinstance(exp, dict):
+            if exp.get("job_required_years") and exp.get("resume_years") is not None:
+                st.write(f"Job requires ~{exp['job_required_years']} years; resume shows ~{exp['resume_years']} years ({exp.get('alignment_pct', 'N/A')}% alignment).")
+            elif exp.get("job_required_years") and not exp.get("resume_years"):
+                st.write("Job includes a years-of-experience requirement but your resume does not list explicit years. Cannot calculate alignment.")
+            else:
+                st.write("No explicit years-of-experience requirement found in the job description.")
+        else:
+            st.write(exp or "No experience data available.")
+
+        # Why this score
+        st.markdown("<div class='section-title'>Why This Score?</div>", unsafe_allow_html=True)
+        st.write(result.get("why_score", ""))
+
+        # Recommended learning path
+        st.markdown("<div class='section-title'>Recommended Skill Path</div>", unsafe_allow_html=True)
+        path = result.get("recommended_path", [])
+        if path:
+            for idx, step in enumerate(path, start=1):
+                st.markdown(f"**{idx}. {step['skill']}**")
+                st.write(f"- Why: {step['why']}")
+                st.write(f"- Suggested focus: {step['focus']}")
+                st.write(f"- Estimated difficulty: {step['difficulty']}")
+        else:
+            st.write("No recommended path available.")
+
+        # Action buttons to connect to Skill Gap and Roadmap
+        action_cols = st.columns(2)
+        with action_cols[0]:
+            if st.button("View My Skill Gap →", key="btn_view_skill_gap"):
+                # populate skill gap using current analysis and navigate
+                try:
+                    st.session_state["skill_gap"] = generate_skill_gap_analysis(role, st.session_state["uploaded_resume"]["text"], result)
+                except Exception:
+                    st.session_state["skill_gap"] = generate_skill_gap_analysis(role, st.session_state["uploaded_resume"]["text"], None)
+                st.session_state["active_page"] = "Skill Gap"
+                st.rerun()
+        with action_cols[1]:
+            if st.button("Build My Career Roadmap →", key="btn_build_roadmap"):
+                try:
+                    st.session_state["roadmap"] = generate_roadmap(role, st.session_state["uploaded_resume"]["text"], result)
+                except Exception:
+                    st.session_state["roadmap"] = generate_roadmap(role, st.session_state["uploaded_resume"]["text"], None)
+                st.session_state["active_page"] = "Career Roadmap"
+                st.rerun()
+
+
+def submit_ai_assistant():
+    prompt = st.session_state.get("assistant_prompt", "").strip()
+    if not prompt:
+        st.session_state["assistant_error"] = "Enter a question before sending it to the AI assistant."
+        return
+
+    response = safe_ai_call(
+        "AI Assistant",
+        prompt,
+        system_prompt="You are a helpful career assistant who provides resume tips, interview guidance, and job search advice.",
+    )
+    messages = st.session_state.get("assistant_messages", [])
+    messages.append({"role": "user", "text": prompt})
+    messages.append({"role": "assistant", "text": response})
+    st.session_state["assistant_messages"] = messages
+    st.session_state["assistant_prompt"] = ""
+    st.session_state["assistant_error"] = ""
+
+
+def render_ai_assistant_page():
+    st.markdown(
+        """
+        <div class='dashboard-card'>
+            <h3>AI Career Assistant</h3>
+            <p>Ask an AI assistant for help with resume wording, career advice, interview preparation, and job strategy.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    if not st.session_state.get("groq_online"):
+        st.warning("Groq AI is not connected. Please check your API key in Settings.")
+
+    st.text_area("Ask a question", value=st.session_state.get("assistant_prompt", ""), height=160, key="assistant_prompt")
+    st.button("Send to AI", key="btn_ai_assistant", on_click=submit_ai_assistant)
+
+    if st.session_state.get("assistant_error"):
+        st.warning(st.session_state.get("assistant_error"))
+
+    if st.session_state.get("assistant_messages"):
+        st.markdown("<div class='section-title'>Conversation</div>", unsafe_allow_html=True)
+        for message in st.session_state["assistant_messages"]:
+            if message["role"] == "user":
+                st.markdown(f"**You:** {message['text']}")
+            else:
+                st.markdown(f"**Assistant:** {message['text']}")
+
+
+def render_career_analytics_page():
+    st.markdown(
+        """
+        <div class='dashboard-card'>
+            <h3>Career Analytics</h3>
+            <p>Track your resume, ATS, job match, and interview readiness with analytics dashboards.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    history_entries = st.session_state.get("history_entries") or load_history_entries()
+    if not history_entries:
+        st.info("Complete more analyses to see your progress.")
+        return
+
+    latest = history_entries[0]
+    resume_score = latest.get("resume_score")
+    ats_score = latest.get("ats_score")
+    job_match_score = latest.get("job_match_score")
+    job_description = latest.get("job_description", "")
+    skill_coverage = latest.get("skill_coverage", 0) or 0
+    interview_readiness = latest.get("interview_readiness", 0) or 0
+
+    kpis = [
+        {"label": "Resume Score", "value": f"{resume_score}/100" if resume_score is not None else "N/A", "foot": "Latest resume analysis"},
+        {"label": "ATS Score", "value": f"{ats_score}/100" if ats_score is not None else "N/A", "foot": "Latest ATS analysis"},
+        {"label": "Job Match Score", "value": f"{job_match_score}/100" if job_description and job_match_score is not None else "N/A", "foot": "Latest job match evaluation"},
+        {"label": "Skill Coverage", "value": f"{skill_coverage}%" if job_description else "N/A", "foot": "Required skills matched"},
+    ]
+
+    cols = st.columns(4)
+    for col, metric in zip(cols, kpis):
+        with col:
+            st.markdown(
+                f"""
+                <div class='metric-card'>
+                    <div class='metric-label'>{metric['label']}</div>
+                    <div class='metric-value'>{metric['value']}</div>
+                    <div class='metric-foot'>{metric['foot']}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+    records = [
+        {
+            "analysis": f"Analysis {idx + 1}",
+            "resume_score": entry.get("resume_score", 0) if entry.get("resume_score") is not None else 0,
+            "ats_score": entry.get("ats_score", 0) if entry.get("ats_score") is not None else 0,
+            "job_match_score": entry.get("job_match_score", 0) if entry.get("job_description") else None,
+            "skill_coverage": entry.get("skill_coverage", 0) if entry.get("job_description") else None,
+            "interview_readiness": entry.get("interview_readiness", 0),
+        }
+        for idx, entry in enumerate(reversed(history_entries))
+    ]
+
+    df = pd.DataFrame(records)
+    if df.empty:
+        st.info("Complete more analyses to see your progress.")
+        return
+
+    if "job_match_score" in df.columns:
+        df["job_match_score"] = df["job_match_score"].fillna(0).astype(int)
+    df["resume_score"] = df["resume_score"].fillna(0).astype(int)
+    df["ats_score"] = df["ats_score"].fillna(0).astype(int)
+    df["skill_coverage"] = df["skill_coverage"].fillna(0).astype(int)
+    df["interview_readiness"] = df["interview_readiness"].fillna(0).astype(int)
+
+    st.markdown("<div class='section-title'>Resume vs ATS Score Trend</div>", unsafe_allow_html=True)
+    st.line_chart(df.set_index("analysis")[ ["resume_score", "ats_score", "job_match_score"] ])
+
+    st.markdown("<div class='section-title'>Readiness Snapshot</div>", unsafe_allow_html=True)
+    snapshot_df = df.tail(1).set_index("analysis")[ ["resume_score", "ats_score", "job_match_score", "skill_coverage", "interview_readiness"] ]
+    st.bar_chart(snapshot_df.T)
 
 
 def render_skill_gap_page():
@@ -1041,10 +1416,16 @@ def main():
         render_resume_analysis_page()
     elif page == "ATS Checker":
         render_ats_page()
+    elif page == "Job Matcher":
+        render_job_matcher_page()
     elif page == "Interview Coach":
         render_interview_page()
+    elif page == "AI Assistant":
+        render_ai_assistant_page()
     elif page == "Skill Gap":
         render_skill_gap_page()
+    elif page == "Career Analytics":
+        render_career_analytics_page()
     elif page == "Career Roadmap":
         render_career_page()
     elif page == "History":
@@ -1053,6 +1434,8 @@ def main():
         render_settings_page()
     elif page == "About":
         render_about_page()
+    else:
+        st.warning(f"The page '{page}' is not implemented yet. Please select a different tab.")
 
 
 if __name__ == "__main__":

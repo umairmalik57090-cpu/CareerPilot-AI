@@ -56,6 +56,7 @@ def read_resume_text(file_path: str | os.PathLike[str]) -> str:
 
 
 def parse_resume(text: str) -> dict[str, Any]:
+    raw_lines = [line.strip() for line in text.splitlines() if line.strip()]
     cleaned = re.sub(r"\s+", " ", text).strip()
     lines = [line.strip() for line in cleaned.splitlines() if line.strip()]
 
@@ -68,34 +69,48 @@ def parse_resume(text: str) -> dict[str, Any]:
     projects: list[str] = []
     certifications: list[str] = []
 
-    if lines:
+    headings = {"skills", "technical skills", "core skills", "education", "academic background", "experience", "work experience", "professional experience", "projects", "portfolio", "certifications", "licenses"}
+    for line in raw_lines:
+        lowered = line.lower()
+        if lowered in headings:
+            continue
+        if re.search(r"([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})", line):
+            continue
+        if re.search(r"(?:\+?\d[\d .-]{8,}\d)", line):
+            continue
+        if not line:
+            continue
+        name = line
+        break
+
+    if not name and lines:
         name = lines[0]
 
-    email_match = re.search(r"([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})", cleaned)
+    email_match = re.search(r"([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})", text)
     if email_match:
         email = email_match.group(1)
 
-    phone_match = re.search(r"(?:\+?\d[\d .-]{8,}\d)", cleaned)
+    phone_match = re.search(r"(?:\+?\d[\d .-]{8,}\d)", text)
     if phone_match:
         phone = phone_match.group(0).strip()
 
-    skill_section = extract_section(cleaned, ["Skills", "Technical Skills", "Core Skills"])
+    skill_section = extract_section(text, ["Skills", "Technical Skills", "Core Skills"])
     if skill_section:
         skills = [item.strip() for item in re.split(r"[,;\n]", skill_section) if item.strip()]
 
-    education_section = extract_section(cleaned, ["Education", "Academic Background"])
+    education_section = extract_section(text, ["Education", "Academic Background"])
     if education_section:
         education = [item.strip() for item in re.split(r"\n|;", education_section) if item.strip()]
 
-    experience_section = extract_section(cleaned, ["Experience", "Work Experience", "Professional Experience"])
+    experience_section = extract_section(text, ["Experience", "Work Experience", "Professional Experience"])
     if experience_section:
         experience = [item.strip() for item in re.split(r"\n(?=\d|[A-Z])", experience_section) if item.strip()]
 
-    projects_section = extract_section(cleaned, ["Projects", "Portfolio"])
+    projects_section = extract_section(text, ["Projects", "Portfolio"])
     if projects_section:
         projects = [item.strip() for item in re.split(r"\n|;", projects_section) if item.strip()]
 
-    certification_section = extract_section(cleaned, ["Certifications", "Licenses"])
+    certification_section = extract_section(text, ["Certifications", "Licenses"])
     if certification_section:
         certifications = [item.strip() for item in re.split(r"\n|;", certification_section) if item.strip()]
 
@@ -112,11 +127,21 @@ def parse_resume(text: str) -> dict[str, Any]:
 
 
 def extract_section(text: str, headings: list[str]) -> str:
-    for heading in headings:
-        pattern = re.compile(rf"{re.escape(heading)}\s*[:\-]?\s*(.*?)(?=(?:\n[A-Z][A-Za-z &/]+\s*[:\-]?|$))", re.IGNORECASE | re.DOTALL)
-        match = pattern.search(text)
-        if match:
-            return match.group(1).strip()
+    lines = text.splitlines()
+    recognized_headings = {"skills", "technical skills", "core skills", "education", "academic background", "experience", "work experience", "professional experience", "projects", "portfolio", "certifications", "licenses"}
+    for idx, line in enumerate(lines):
+        lowered = line.strip().lower()
+        for heading in headings:
+            if lowered == heading.lower() or lowered.startswith(f"{heading.lower()}:") or lowered.startswith(f"{heading.lower()}-"):
+                section_lines = []
+                for next_line in lines[idx + 1:]:
+                    next_clean = next_line.strip()
+                    if not next_clean:
+                        continue
+                    if next_clean.lower() in recognized_headings or next_clean.lower().startswith(tuple(f"{h}:" for h in recognized_headings)):
+                        break
+                    section_lines.append(next_clean)
+                return "\n".join(section_lines).strip()
     return ""
 
 
@@ -138,6 +163,40 @@ def build_history_entry(uploaded_file, parsed_resume: dict[str, Any], saved_path
         "ats_score": 0,
         "role": "Resume Upload",
         "saved_path": saved_path,
+        "parsed": parsed_resume,
+    }
+
+
+def build_analysis_history_entry(
+    parsed_resume: dict[str, Any],
+    resume_score: int = 0,
+    ats_score: int = 0,
+    job_match_score: int = 0,
+    skill_coverage: int = 0,
+    interview_readiness: int = 0,
+    target_role: str = "General",
+    summary: str = "Analysis complete",
+    job_description: str = "",
+    matching_skills: list[str] | None = None,
+    missing_skills: list[str] | None = None,
+    preferred_skills: list[str] | None = None,
+    partial_matches: list[str] | None = None,
+) -> dict[str, Any]:
+    return {
+        "timestamp": datetime.now().isoformat(timespec="seconds"),
+        "resume_name": parsed_resume.get("name", "Resume"),
+        "resume_score": int(resume_score or 0),
+        "ats_score": int(ats_score or 0),
+        "job_match_score": int(job_match_score or 0),
+        "skill_coverage": int(skill_coverage or 0),
+        "interview_readiness": int(interview_readiness or 0),
+        "role": target_role,
+        "summary": summary,
+        "job_description": job_description,
+        "matching_skills": matching_skills or [],
+        "missing_skills": missing_skills or [],
+        "preferred_skills": preferred_skills or [],
+        "partial_matches": partial_matches or [],
         "parsed": parsed_resume,
     }
 

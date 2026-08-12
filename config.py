@@ -5,23 +5,26 @@ from dotenv import load_dotenv
 
 APP_CONFIG = {
     "title": "CareerPilot AI",
-    "subtitle": "Your Personal AI Resume & Interview Coach",
-    "tagline": "Build a Better Resume. Prepare Smarter. Land Your Dream Job.",
+    "subtitle": "AI-Powered Career Intelligence & Interview Preparation Platform",
+    "tagline": "Build a better resume, match your strengths to jobs, and prepare with confidence.",
     "icon": "🚀",
     "theme": "dark",
-    "version": "0.1.0",
+    "version": "0.2.0",
 }
 
 SIDEBAR_ITEMS = {
-    "Dashboard": "Home",
-    "Resume Analysis": "Resume Analysis",
-    "ATS Checker": "ATS Checker",
-    "Interview Coach": "Interview Coach",
-    "Skill Gap": "Skill Gap",
-    "Career Roadmap": "Career Roadmap",
-    "History": "History",
-    "Settings": "Settings",
-    "About": "About",
+    "🏠 Dashboard": "Dashboard",
+    "📄 Resume Analysis": "Resume Analysis",
+    "🎯 ATS Checker": "ATS Checker",
+    "🔍 Job Matcher": "Job Matcher",
+    "🧠 Skill Gap": "Skill Gap",
+    "🗺️ Career Roadmap": "Career Roadmap",
+    "🎤 Interview Coach": "Interview Coach",
+    "💬 AI Career Assistant": "AI Assistant",
+    "📊 Career Analytics": "Career Analytics",
+    "🕐 History": "History",
+    "⚙️ Settings": "Settings",
+    "ℹ️ About": "About",
 }
 
 BASE_DIR = Path(__file__).resolve().parent
