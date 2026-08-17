@@ -4,7 +4,15 @@ import re
 from pathlib import Path
 from typing import Any
 
-from dotenv import load_dotenv
+try:
+    import streamlit as st
+except Exception:  # pragma: no cover - local VS Code execution without Streamlit
+    st = None
+
+try:
+    from dotenv import load_dotenv
+except Exception:  # pragma: no cover - optional dependency if dotenv missing
+    load_dotenv = None
 
 try:
     from groq import Groq
@@ -13,16 +21,63 @@ except Exception:  # pragma: no cover
 
 BASE_DIR = Path(__file__).resolve().parent
 ENV_PATH = BASE_DIR / ".env"
-load_dotenv(ENV_PATH)
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip()
-MODEL_NAME = os.getenv("MODEL_NAME", "llama-3.3-70b-versatile").strip()
-
+GROQ_API_KEY = ""
+MODEL_NAME = "groq/compound"
 _groq_client = None
+
+
+def _mask_secret(value: str) -> str:
+    if not value:
+        return "<empty>"
+    if len(value) <= 8:
+        return "****"
+    return f"{value[:4]}{'*' * max(4, len(value) - 8)}{value[-4:]}"
+
+
+def _load_runtime_config() -> tuple[str, str]:
+    global GROQ_API_KEY, MODEL_NAME
+
+    key = ""
+    try:
+        if st is not None and hasattr(st, "secrets"):
+            secrets = st.secrets
+            if isinstance(secrets, dict):
+                key = str(secrets.get("GROQ_API_KEY", "") or "").strip()
+    except Exception:
+        key = ""
+
+    if not key and ENV_PATH.exists() and load_dotenv is not None:
+        load_dotenv(ENV_PATH, override=False)
+        key = os.getenv("GROQ_API_KEY", "").strip()
+
+    if not key:
+        key = os.getenv("GROQ_API_KEY", "").strip()
+
+    model = ""
+    try:
+        if st is not None and hasattr(st, "secrets"):
+            secrets = st.secrets
+            if isinstance(secrets, dict):
+                model = str(secrets.get("MODEL_NAME", "") or "").strip()
+    except Exception:
+        model = ""
+
+    if not model and ENV_PATH.exists() and load_dotenv is not None:
+        load_dotenv(ENV_PATH, override=False)
+        model = os.getenv("MODEL_NAME", "groq/compound").strip()
+
+    if not model:
+        model = os.getenv("MODEL_NAME", "groq/compound").strip() or "groq/compound"
+
+    GROQ_API_KEY = key
+    MODEL_NAME = model or "groq/compound"
+    return GROQ_API_KEY, MODEL_NAME
 
 
 def get_groq_client():
     global _groq_client
+    _load_runtime_config()
     if not GROQ_API_KEY:
         raise RuntimeError("GROQ_API_KEY is not configured.")
     if Groq is None:
@@ -67,9 +122,23 @@ def parse_json_response(text: str) -> Any:
         raise ValueError("Unable to generate AI response. Please try again.")
 
 
+def _get_groq_error_reason(exc: Exception) -> str:
+    message = str(exc).lower()
+    if any(token in message for token in ["401", "401 unauthorized", "authentication", "invalid api key", "unauthorized", "forbidden"]):
+        return "authentication error"
+    if any(token in message for token in ["404", "model not found", "model unavailable", "decommissioned", "does not exist", "not available"]):
+        return "model unavailable"
+    if any(token in message for token in ["429", "rate limit", "too many requests"]):
+        return "rate limit exceeded"
+    return "connection error"
+
+
 def check_groq_connection() -> tuple[bool, str]:
+    _load_runtime_config()
     api_key_loaded = bool(GROQ_API_KEY)
+    masked_key = _mask_secret(GROQ_API_KEY)
     print(f"[Groq] API key loaded? {'Yes' if api_key_loaded else 'No'}")
+    print(f"[Groq] API key preview: {masked_key}")
     print(f"[Groq] Model name: {MODEL_NAME}")
 
     if not api_key_loaded:
@@ -94,8 +163,9 @@ def check_groq_connection() -> tuple[bool, str]:
             return True, status
         return True, "Connected (Groq)"
     except Exception as exc:
-        print(f"[Groq] Connection test failed: {exc}")
-        return False, "🔴 AI Offline (Groq)"
+        reason = _get_groq_error_reason(exc)
+        print(f"[Groq] Connection test failed: {reason}")
+        return False, f"🔴 AI Offline (Groq): {reason}"
 
 
 def validate_groq_connection() -> tuple[bool, str]:
@@ -103,7 +173,7 @@ def validate_groq_connection() -> tuple[bool, str]:
 
 
 def get_groq_error_reason(exc: Exception) -> str:
-    return "Unable to generate AI response. Please try again."
+    return _get_groq_error_reason(exc)
 
 
 def generate_chat_completion(
@@ -114,6 +184,7 @@ def generate_chat_completion(
     max_tokens: int = 4096,
 ) -> str:
     try:
+        _load_runtime_config()
         client = get_groq_client()
         kwargs = {
             "model": MODEL_NAME,
@@ -130,8 +201,10 @@ def generate_chat_completion(
         response = client.chat.completions.create(**kwargs)
         return response.choices[0].message.content or ""
     except Exception as exc:
-        print(f"[Groq Client] Request failed: {exc}")
-        raise RuntimeError("Unable to generate AI response. Please try again.") from exc
+        reason = _get_groq_error_reason(exc)
+        safe_message = f"Groq connection failed: {reason}"
+        print(f"[Groq Client] Request failed: {safe_message}")
+        raise RuntimeError(safe_message) from exc
 
 
 def generate_interview_questions(role: str, count: int) -> list[str]:
